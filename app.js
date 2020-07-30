@@ -6,12 +6,19 @@ const createError = require('http-errors');
 const logger = require('morgan');
 const sassMiddleware = require('node-sass-middleware');
 const serveFavicon = require('serve-favicon');
+const hbs = require('hbs');
+const hbsJsonHelper = require('hbs-json');
+
 const indexRouter = require('./routes/index');
+const placeRouter = require('./routes/placeRouter');
 
 const app = express();
 
 app.set('views', join(__dirname, 'views'));
 app.set('view engine', 'hbs');
+
+hbs.registerPartials(join(__dirname, 'views/partials'));
+hbs.registerHelper('json', hbsJsonHelper);
 
 app.use(serveFavicon(join(__dirname, 'public/images', 'favicon.ico')));
 app.use(
@@ -27,7 +34,14 @@ app.use(express.static(join(__dirname, 'public')));
 app.use(logger('dev'));
 app.use(express.urlencoded({ extended: true }));
 
+// Make env variables available to templates
+app.use((req, res, next) => {
+  res.locals.environmentVariables = process.env;
+  next();
+});
+
 app.use('/', indexRouter);
+app.use('/place', placeRouter);
 
 // Catch missing routes and forward to error handler
 app.use((req, res, next) => {
